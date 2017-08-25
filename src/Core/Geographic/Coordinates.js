@@ -423,7 +423,19 @@ Coordinates.prototype.z = function z() {
 
 Coordinates.prototype.xyz = function xyz(target) {
     _assertIsGeocentric(this.crs);
-    const v = target || new THREE.Vector3();
+    return this.toVector3(target);
+};
+
+/**
+ * The function converts Coordinates to Vector3
+ * Vector3.x: longitude or x value
+ * Vector3.y: latitude or y value
+ * Vector3.z: altitude or z value
+ * @param      {Vector3}  optionalTarget  if there's optionalTarget the result is copy in it
+ * @return     {Vector3}  return the convertion to Vectot3
+ */
+Coordinates.prototype.toVector3 = function toVector3(optionalTarget) {
+    const v = optionalTarget || new THREE.Vector3();
     v.fromArray(this._values);
     return v;
 };

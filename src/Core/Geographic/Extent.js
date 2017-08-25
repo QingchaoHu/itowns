@@ -336,4 +336,29 @@ Extent.prototype.merge = function merge(extent) {
     }
 };
 
+/**
+ * mergeCoordinate performs the minimum extension for
+ * a coordinates to belong to the extended
+ *
+ * @param {Coordinates} coordinates  The coordinates to belong
+ */
+Extent.prototype.mergeCoordinate = function mergeCoordinate(coordinates) {
+    const coords = coordinates.as(this.crs());
+    const unit = coords._internalStorageUnit;
+    const we = convertValueToUnit(unit, this._internalStorageUnit, coords._values[0]);
+    if (we < this.west()) {
+        this._values[CARDINAL.WEST] = we;
+    }
+    if (we > this.east()) {
+        this._values[CARDINAL.EAST] = we;
+    }
+    const sn = convertValueToUnit(unit, this._internalStorageUnit, coords._values[1]);
+    if (sn < this.south()) {
+        this._values[CARDINAL.SOUTH] = sn;
+    }
+    if (sn > this.north()) {
+        this._values[CARDINAL.NORTH] = sn;
+    }
+};
+
 export default Extent;
