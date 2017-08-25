@@ -46,10 +46,6 @@ export default {
             throw new Error('layer.file is required');
         }
 
-        if (!layer.projection) {
-            throw new Error('layer.projection is required');
-        }
-
         layer.options = layer.options || {};
 
         // Know if it's an xml file, then it can be kml or gpx
@@ -57,11 +53,11 @@ export default {
             if (layer.file.getElementsByTagName('kml')[0]) {
                 layer.options.mimetype = 'vector/kml';
                 // KML crs specification : 'EPSG:4326'
-                layer.crsFile = layer.crsFile || 'EPSG:4326';
+                layer.projection = layer.projection || 'EPSG:4326';
             } else if (layer.file.getElementsByTagName('gpx')[0]) {
                 // GPX crs specification : 'EPSG:4326'
                 layer.options.mimetype = 'vector/gpx';
-                layer.crsFile = layer.crsFile || 'EPSG:4326';
+                layer.projection = layer.projection || 'EPSG:4326';
             } else {
                 throw new Error('Unsupported xml file data vector');
             }
@@ -87,22 +83,27 @@ export default {
         // It shouldn't use parent's texture outside the extent
         // Otherwise artefacts appear at the outer edge
         layer.noTextureParentOutsideLimit = true;
-
-        const options = { toMesh: false, buildExtent: true, crsIn: layer.crsFile };
+        const options = { toMesh: false, buildExtent: true, crsIn: layer.projection };
 
         if (layer.options.mimetype === 'vector/geojson') {
-            layer.geojson = GeoJSON2Three.parse(layer.projection, layer.file, layer.extent, options);
+            layer.geojson = GeoJSON2Three.parse(layer.reprojection, layer.file, layer.extent, options);
             layer.extent = layer.geojson.extent || layer.geojson.geometry.extent;
         } else if (layer.options.mimetype === 'vector/kml') {
             const geojson = togeojson.kml(layer.file);
-            layer.geojson = GeoJSON2Three.parse(layer.projection, geojson, layer.extent, options);
+            layer.geojson = GeoJSON2Three.parse(layer.reprojection, geojson, layer.extent, options);
             layer.extent = layer.geojson.extent;
         } else if (layer.options.mimetype === 'vector/gpx') {
             const geojson = togeojson.gpx(layer.file);
             layer.style.stroke = layer.style.stroke || 'red';
             layer.extent = getExtentFromGpxFile(layer.file);
-            layer.geojson = GeoJSON2Three.parse(layer.projection, geojson, layer.extent, options);
+            layer.geojson = GeoJSON2Three.parse(layer.reprojection, geojson, layer.extent, options);
+            layer.extent = layer.geojson.extent;
         }
+        // GeoJSON2Three.parse reprojects in local tile texture space
+        // Rasterizer gives textures in this new reprojection space
+        // layer.projection is now reprojection
+        layer.originalprojection = layer.projection;
+        layer.projection = layer.reprojection;
     },
     tileInsideLimit(tile, layer) {
         return tile.level >= layer.options.zoom.min && tile.level <= layer.options.zoom.max && layer.extent.intersect(tile.extent);
