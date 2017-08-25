@@ -110,7 +110,7 @@ export function createGlobeLayer(id, options) {
     wgs84TileLayer.schemeTile = globeSchemeTileWMTS(globeSchemeTile1);
     wgs84TileLayer.extent = wgs84TileLayer.schemeTile[0].clone();
     for (let i = 1; i < wgs84TileLayer.schemeTile.length; i++) {
-        wgs84TileLayer.extent.merge(wgs84TileLayer.schemeTile[i]);
+        wgs84TileLayer.extent.union(wgs84TileLayer.schemeTile[i]);
     }
     wgs84TileLayer.preUpdate = (context, layer, changeSources) => {
         SubdivisionControl.preUpdate(context, layer);

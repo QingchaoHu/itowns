@@ -92,7 +92,7 @@ Scheduler.prototype.initDefaultProviders = function initDefaultProviders() {
     this.addProtocolProvider('tms', new TMS_Provider());
     this.addProtocolProvider('potreeconverter', PointCloudProvider);
     this.addProtocolProvider('wfs', new WFS_Provider());
-    this.addProtocolProvider('vectortocolor', new VectorToColor_Provider());
+    this.addProtocolProvider('rasterizer', VectorToColor_Provider);
 };
 
 Scheduler.prototype.runCommand = function runCommand(command, queue, executingCounterUpToDate) {

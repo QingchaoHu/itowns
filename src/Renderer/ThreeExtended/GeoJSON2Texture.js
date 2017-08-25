@@ -84,7 +84,7 @@ function drawFeatureCollection(ctx, collection, origin, dimension, extent, style
 }
 
 export default {
-    getTextureFromGeoson(geojson, extent, sizeTexture, style) {
+    createTextureFromGeoson(geojson, extent, sizeTexture, style) {
         // A texture is instancied drawn canvas
         // origin and dimension are used to transform the geojson's coordinates to canvas's space
         const origin = new THREE.Vector2(extent.west(UNIT.DEGREE), extent.south(UNIT.DEGREE));

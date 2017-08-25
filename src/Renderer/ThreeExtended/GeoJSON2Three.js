@@ -40,9 +40,9 @@ function readCoordinates(crsIn, crsOut, coordinates, extent) {
         } else {
             out.push(coords.as(crsOut));
         }
-        // merge point if extent present
+        // expand extent if present
         if (extent) {
-            extent.mergeCoordinate(out[out.length - 1]);
+            extent.expandByPoint(out[out.length - 1]);
         }
     }
 
@@ -53,23 +53,23 @@ function readCoordinates(crsIn, crsOut, coordinates, extent) {
 // - type is the geom type
 // - vertices is an array of THREE.Vector3
 // - indices is optional, and are currently only used for polygons
-// - extent is optional, it's extent vertices
+// - extent is optional, it's vertices's extent
 // Multi-* geometry types are merged in one.
 const GeometryToVertices = {
     point(crsIn, crsOut, coordinates, filteringExtent, options) {
-        const extent = options.buildExtent ? new Extent(crsOut, Infinity, -Infinity, Infinity, -Infinity) : 0;
+        const extent = options.buildExtent ? new Extent(crsOut, undefined, undefined, undefined, undefined) : 0;
         const coords = readCoordinates(crsIn, crsOut, coordinates, extent);
         const vertices = [];
         for (const c of coords) {
             if (filteringExtent && filteringExtent.isPointInside(c)) {
-                vertices.push(c.toVector3());
+                vertices.push(c.rawValues());
             }
         }
         return { type: 'point', vertices, extent };
     },
 
     polygon(crsIn, crsOut, coordinates, filteringExtent, options) {
-        const extent = options.buildExtent ? new Extent(crsOut, Infinity, -Infinity, Infinity, -Infinity) : 0;
+        const extent = options.buildExtent ? new Extent(crsOut, undefined, undefined, undefined, undefined) : 0;
         const contour = readCoordinates(crsIn, crsOut, coordinates[0], extent);
         if (filteringExtent && !filteringExtent.isPointInside(contour[0])) {
             return;
@@ -80,20 +80,20 @@ const GeometryToVertices = {
             const vertices = new Array(3 * contour.length);
             let offset = 0;
             for (const vertex of contour) {
-                const v = vertex.toVector3();
+                const v = vertex.rawValues();
                 v.toArray(vertices, offset);
                 vertices2.push(v);
                 offset += 3;
             }
             // TODO: handle holes
             triangles = Earcut(vertices, null, 3);
+            return { type: 'polygon', vertices: vertices2, indices: triangles, extent };
         } else {
             for (const vertex of contour) {
-                vertices2.push(vertex.toVector3());
+                vertices2.push(vertex.rawValues());
             }
+            return { type: 'polygon', vertices: vertices2, extent };
         }
-
-        return { type: 'polygon', vertices: vertices2, indices: triangles, extent };
     },
 
     lineString(crsIn, crsOut, coordinates, filteringExtent, options) {
@@ -105,7 +105,7 @@ const GeometryToVertices = {
 
         const vertices = [];
         for (const c of coords) {
-            vertices.push(c.toVector3());
+            vertices.push(c.rawValues());
         }
         const indices = [];
         if (options.toMesh) {
@@ -113,9 +113,10 @@ const GeometryToVertices = {
                 indices.push(i);
                 indices.push(i + 1);
             }
+            return { type: 'linestring', vertices, indices, extent };
+        } else {
+            return { type: 'linestring', vertices, extent };
         }
-
-        return { type: 'linestring', vertices, indices, extent };
     },
 
     merge(...geoms) {
@@ -135,9 +136,9 @@ const GeometryToVertices = {
             } else {
                 // merge vertices
                 result.vertices = result.vertices.concat(geom.vertices);
-                // merge extent if present
+                // union extent if present
                 if (geom.extent) {
-                    result.extent.merge(geom.extent);
+                    result.extent.union(geom.extent);
                 }
                 if (result.indices) {
                     // merge indices if present
@@ -169,7 +170,7 @@ const GeometryToVertices = {
     multiPolygon(crsIn, crsOut, coordinates, filteringExtent, options) {
         let result;
         for (const polygon of coordinates) {
-            const p = this.polygon(crsIn, crsOut, polygon, options);
+            const p = this.polygon(crsIn, crsOut, polygon, filteringExtent, options);
             if (!p) {
                 return;
             }
@@ -302,7 +303,7 @@ function readFeatureCollection(crsIn, crsOut, json, filteringExtent, options) {
             result.add(options.toMesh ? verticesToMesh(p) : p);
             if (p.extent) {
                 if (result.extent) {
-                    result.extent.merge(p.extent);
+                    result.extent.union(p.extent);
                 } else {
                     result.extent = p.extent.clone();
                 }
@@ -316,7 +317,7 @@ function readFeatureCollection(crsIn, crsOut, json, filteringExtent, options) {
             result.add(options.toMesh ? verticesToMesh(p) : p);
             if (p.extent) {
                 if (result.extent) {
-                    result.extent.merge(p.extent);
+                    result.extent.union(p.extent);
                 } else {
                     result.extent = p.extent.clone();
                 }

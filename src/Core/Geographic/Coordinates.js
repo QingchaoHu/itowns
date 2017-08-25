@@ -423,18 +423,18 @@ Coordinates.prototype.z = function z() {
 
 Coordinates.prototype.xyz = function xyz(target) {
     _assertIsGeocentric(this.crs);
-    return this.toVector3(target);
+    return this.rawValues(target);
 };
 
 /**
- * The function converts Coordinates to Vector3
+ * The function returns the coordinates's values without convertion in Vector3
  * Vector3.x: longitude or x value
  * Vector3.y: latitude or y value
  * Vector3.z: altitude or z value
  * @param      {Vector3}  optionalTarget  if there's optionalTarget the result is copy in it
- * @return     {Vector3}  return the convertion to Vectot3
+ * @return     {Vector3}  return the coordinates's values without convertion in Vector3
  */
-Coordinates.prototype.toVector3 = function toVector3(optionalTarget) {
+Coordinates.prototype.rawValues = function rawValues(optionalTarget) {
     const v = optionalTarget || new THREE.Vector3();
     v.fromArray(this._values);
     return v;
