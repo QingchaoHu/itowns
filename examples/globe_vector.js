@@ -2,7 +2,7 @@
 // # Simple Globe viewer
 
 // Define initial camera position
-var positionOnGlobe = { longitude: 4, latitude: 45.9056, altitude: 2000000 };
+var positionOnGlobe = { longitude: 3.5, latitude: 44, altitude: 1000000 };
 var promises = [];
 
 var urlKml = 'https://raw.githubusercontent.com/iTowns/iTowns2-sample-data/master/croquis.kml';
@@ -32,7 +32,6 @@ promises.push(itowns.Fetcher.xml(urlKml).then(function _(file) {
         type: 'color',
         file: file,
         protocol: 'rasterizer',
-        projection: 'EPSG:4326',
         id: 'Kml',
     };
     globeView.addLayer(kmlLayer);
@@ -43,7 +42,6 @@ promises.push(itowns.Fetcher.xml(urlGpx).then(function _(file) {
         type: 'color',
         file: file,
         protocol: 'rasterizer',
-        projection: 'EPSG:4326',
         id: 'Gpx',
     };
     globeView.addLayer(gpxLayer);
@@ -56,7 +54,6 @@ promises.push(itowns.Fetcher.json(urlGeojson).then(function _(file) {
         protocol: 'rasterizer',
         id: 'ariege',
         projection: 'EPSG:4326',
-        crsFile: 'EPSG:4326',
         style: {
             fill: 'orange',
             fillOpacity: 0.5,

@@ -60,12 +60,25 @@ itowns.Fetcher.xml('https://raw.githubusercontent.com/iTowns/iTowns2-sample-data
         type: 'color',
         file: file,
         protocol: 'rasterizer',
-        projection: view.referenceCrs,
         id: 'Kml',
         extent: extent,
         options: { zoom: { min: 0, max: 6 } },
     };
 
+    view.addLayer(kmlLayer);
+});
+
+itowns.Fetcher.xml('https://raw.githubusercontent.com/iTowns/iTowns2-sample-data/master/lyon.gpx').then(function _(file) {
+    var kmlLayer = {
+        type: 'color',
+        file: file,
+        protocol: 'rasterizer',
+        options: { zoom: { min: 0, max: 6 } },
+        id: 'gpx',
+        style: {
+            stroke: 'blue',
+        },
+    };
     view.addLayer(kmlLayer);
 });
 
