@@ -7,8 +7,8 @@
 import * as THREE from 'three';
 import togeojson from 'togeojson';
 import Extent from '../../Geographic/Extent';
-import GeoJSON2Texture from '../../../Renderer/ThreeExtended/GeoJSON2Texture';
-import GeoJSON2Three from '../../../Renderer/ThreeExtended/GeoJSON2Three';
+import Feature2Texture from '../../../Renderer/ThreeExtended/Feature2Texture';
+import GeoJSON2Feature from '../../../Renderer/ThreeExtended/GeoJSON2Feature';
 
 function getExtentFromGpxFile(file) {
     const bound = file.getElementsByTagName('bounds')[0];
@@ -30,7 +30,7 @@ function createTextureFromVector(tile, layer) {
     if (layer.type == 'color') {
         const coords = tile.extent.as(layer.projection);
         const result = { pitch: new THREE.Vector3(0, 0, 1) };
-        result.texture = GeoJSON2Texture.createTextureFromGeoson(layer.geojson, tile.extent, 256, layer.style);
+        result.texture = Feature2Texture.createTextureFromGeoson(layer.geojson, tile.extent, 256, layer.style);
         result.texture.extent = tile.extent;
         result.texture.coords = coords;
         result.texture.coords.zoom = tile.level;
@@ -83,23 +83,23 @@ export default {
         // It shouldn't use parent's texture outside the extent
         // Otherwise artefacts appear at the outer edge
         layer.noTextureParentOutsideLimit = true;
-        const options = { toMesh: false, buildExtent: true, crsIn: layer.projection };
+        const options = { buildExtent: true, crsIn: layer.projection };
 
         if (layer.options.mimetype === 'vector/geojson') {
-            layer.geojson = GeoJSON2Three.parse(layer.reprojection, layer.file, layer.extent, options);
+            layer.geojson = GeoJSON2Feature.parse(layer.reprojection, layer.file, layer.extent, options);
             layer.extent = layer.geojson.extent || layer.geojson.geometry.extent;
         } else if (layer.options.mimetype === 'vector/kml') {
             const geojson = togeojson.kml(layer.file);
-            layer.geojson = GeoJSON2Three.parse(layer.reprojection, geojson, layer.extent, options);
+            layer.geojson = GeoJSON2Feature.parse(layer.reprojection, geojson, layer.extent, options);
             layer.extent = layer.geojson.extent;
         } else if (layer.options.mimetype === 'vector/gpx') {
             const geojson = togeojson.gpx(layer.file);
             layer.style.stroke = layer.style.stroke || 'red';
             layer.extent = getExtentFromGpxFile(layer.file);
-            layer.geojson = GeoJSON2Three.parse(layer.reprojection, geojson, layer.extent, options);
+            layer.geojson = GeoJSON2Feature.parse(layer.reprojection, geojson, layer.extent, options);
             layer.extent = layer.geojson.extent;
         }
-        // GeoJSON2Three.parse reprojects in local tile texture space
+        // GeoJSON2Feature.parse reprojects in local tile texture space
         // Rasterizer gives textures in this new reprojection space
         // layer.projection is now reprojection
         layer.originalprojection = layer.projection;

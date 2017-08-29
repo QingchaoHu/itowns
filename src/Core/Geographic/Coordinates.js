@@ -440,6 +440,17 @@ Coordinates.prototype.rawValues = function rawValues(optionalTarget) {
     return v;
 };
 
+Coordinates.prototype.toArray = function toArray(array, offset) {
+    if (array === undefined) array = [];
+    if (offset === undefined) offset = 0;
+
+    array[offset] = this._values[0];
+    array[offset + 1] = this._values[1];
+    array[offset + 2] = this._values[2];
+
+    return array;
+};
+
 /**
  * Returns coordinates in the wanted {@link http://inspire.ec.europa.eu/theme/rs|CRS}.
  * @example
