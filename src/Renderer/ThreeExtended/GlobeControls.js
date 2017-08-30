@@ -642,6 +642,58 @@ function GlobeControls(view, target, radius, options = {}) {
             this.camera.position.copy(cameraTargetOnGlobe.localToWorld(offset));
         }
 
+        // HANDLING CAMERA COLLISION WITH TERRAIN
+        // We check here if the camera is too close to the ground or even under it to avoid collisions
+        const camLocation = this.getCameraLocation();
+        let currentTile;
+
+        function tO(obj) {
+            if (obj.extent) {
+                if (obj.extent.isPointInside(camLocation)) {
+                    currentTile = obj;
+                }
+            }
+        }
+
+        if (view.wgs84TileLayer) {
+            for (const node of view.wgs84TileLayer.level0Nodes) {
+                if (node.extent.isPointInside(camLocation)) {
+                    node.traverse(tO);
+                }
+            }
+        }
+
+        // We first test if camera is very close to the tile bounding box
+        if (currentTile) {
+            const alti = currentTile.OBB().z.max + this.minDistance;
+            const distance = camLocation.altitude() - alti;
+            // If inside, we then need more precision: the exact elevation under camera location
+            if (distance < 0) {
+                const corners = currentTile.OBB()._cPointsWorld(currentTile.OBB()._points());
+                const pNormed = this.camera.position.clone().sub(corners[1]);
+                const AB = corners[0].clone().sub(corners[1]);
+                const AC = corners[2].clone().sub(corners[1]);
+                const pNormedProjectedOnAB = pNormed.clone().projectOnVector(AB);
+                const pNormedProjectedOnAC = pNormed.clone().projectOnVector(AC);
+                let u = pNormedProjectedOnAB.length() / AB.length();
+                let v = pNormedProjectedOnAC.length() / AC.length();
+                const offsetScale = currentTile.material.uniforms.offsetScale_L00.value[0];
+                u = offsetScale.x + u * offsetScale.z;
+                v = offsetScale.y + v * offsetScale.z;
+                if (currentTile.material.textures[0][0].image) {
+                    const w = currentTile.material.textures[0][0].image.width;
+                    const indiceElevation = Math.floor(v * w) * w + Math.floor(u * w);
+                    // Then we access the elevation using the offset
+                    const elevationUnderCamera = currentTile.material.textures[0][0].image.data[indiceElevation];
+                    const difElevation = camLocation.altitude() - (elevationUnderCamera + this.minDistance);
+                    // We move the camera to avoid collisions if too close
+                    if (difElevation < 0) {
+                        this.camera.position.setLength(this.camera.position.length() - difElevation);
+                    }
+                }
+            }
+        }
+
         this.camera.lookAt(movingCameraTargetOnGlobe);
 
         if (!this.enableDamping) {
